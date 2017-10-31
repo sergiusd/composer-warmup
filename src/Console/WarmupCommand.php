@@ -5,9 +5,11 @@ namespace Jderusse\Warmup\Console;
 use Composer\Command\BaseCommand;
 use Jderusse\Warmup\ClassmapReader\ChainReader;
 use Jderusse\Warmup\ClassmapReader\DirectoryReader;
+use Jderusse\Warmup\ClassmapReader\ExtensionReader;
 use Jderusse\Warmup\ClassmapReader\OptimizedReader;
 use Jderusse\Warmup\Compiler\PhpServerCompiler;
 use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -18,7 +20,8 @@ class WarmupCommand extends BaseCommand
         $this
             ->setName('warmup-opcode')
             ->setDescription('Warmup the application\'s OpCode')
-            ->addArgument('extra', InputArgument::IS_ARRAY, 'add extra path to compile');
+            ->addArgument('extra-dir', InputArgument::IS_ARRAY, 'add extra path to compile')
+            ->addOption('ext', null, InputOption::VALUE_OPTIONAL | InputOption::VALUE_IS_ARRAY, 'add extension to compile', []);
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
@@ -48,17 +51,27 @@ class WarmupCommand extends BaseCommand
 
         $composer = $this->getComposer();
 
-        $reader = new ChainReader(
-            array_merge(
+        $extensions = $input->getOption('ext');
+        if ($extensions && $input->getArgument('extra-dir')) {
+            $readers = array_map(
+                function ($extra) use ($extensions) {
+                    return new ExtensionReader($extra, $extensions);
+                },
+                $input->getArgument('extra-dir')
+            );
+        } else {
+            $readers = array_merge(
                 [new OptimizedReader($composer->getConfig())],
                 array_map(
                     function ($extra) {
                         return new DirectoryReader($extra);
                     },
-                    $input->getArgument('extra')
+                    $input->getArgument('extra-dir')
                 )
-            )
-        );
+            );
+        }
+
+        $reader = new ChainReader($readers);
         $compiler = new PhpServerCompiler();
         foreach ($reader->getClassmap() as $file) {
             try {

@@ -1,9 +1,10 @@
 {
-  "name": "jderusse/composer-warmup",
+  "name": "sergiusd/composer-warmup",
   "type": "composer-plugin",
   "require": {
     "php": ">=7.0",
     "composer-plugin-api": "^1.0",
+    "symfony/finder": "^3.3.10",
     "ext-Zend-OPcache": "*"
   },
   "extra": {
