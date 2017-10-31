@@ -14,6 +14,10 @@ class PhpServerCompiler implements CompilerInterface
     private $address;
     /** @var Process */
     private $process;
+    /** @var int */
+    private $processOutputLength = 0;
+    /** @var int */
+    private $processErrorOutputLength = 0;
 
     public function __construct(array $portRange = [8000, 8999])
     {
@@ -75,6 +79,18 @@ class PhpServerCompiler implements CompilerInterface
     public function compile(string $file)
     {
         file_get_contents(sprintf('http://%s/?file=%s', $this->address, urlencode($file)));
+    }
+
+    public function getProcessOutput()
+    {
+        if ($this->process->isRunning()) {
+            $output = $this->process->getOutput();
+            $errorOutput = $this->process->getErrorOutput();
+            $ret = substr($output, $this->processOutputLength).substr($errorOutput, $this->processErrorOutputLength);
+            $this->processOutputLength = strlen($output);
+            $this->processErrorOutputLength = strlen($errorOutput);
+            return $ret;
+        }
     }
 
     private function findPort(array $portRange)

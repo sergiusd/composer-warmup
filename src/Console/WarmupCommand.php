@@ -82,6 +82,9 @@ class WarmupCommand extends BaseCommand
             } catch (\Throwable $e) {
                 $output->writeln(sprintf('<error>Failed to compile file <comment>%s</comment></error>', $file));
             }
+            if ($message = $compiler->getProcessOutput()) {
+                $output->writeln($message);
+            }
         }
     }
 }
